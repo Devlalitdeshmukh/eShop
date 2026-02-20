@@ -1,0 +1,1 @@
+import pool from './backend/config/db.js'; async function check() { try { const [cols] = await pool.query('DESCRIBE leaves'); console.table(cols); } catch(e) { console.error(e); } process.exit(); } check();
