@@ -6,15 +6,15 @@ import {
   updateAboutus,
   deleteAboutus,
 } from "../controllers/aboutController.js";
-import { protect, admin } from "../middlewares/authMiddleware.js";
+import { protect, adminOnly, adminOrStaff } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-router.route("/").get(getAboutus).post(protect, admin, createAboutus);
+router.route("/").get(getAboutus).post(protect, adminOnly, createAboutus);
 router
   .route("/:id")
   .get(getAboutusById)
-  .put(protect, admin, updateAboutus)
-  .delete(protect, admin, deleteAboutus);
+  .put(protect, adminOrStaff, updateAboutus)
+  .delete(protect, adminOnly, deleteAboutus);
 
 export default router;

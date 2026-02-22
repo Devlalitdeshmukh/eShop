@@ -103,6 +103,12 @@ const OrderDetail = () => {
         </div>
         
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => window.print()}
+            className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50"
+          >
+            Download Invoice (PDF)
+          </button>
           <div className="text-right mr-2 hidden md:block">
             <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Status</p>
             <p className="font-bold text-gray-900">{order.status}</p>

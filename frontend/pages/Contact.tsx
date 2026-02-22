@@ -1,24 +1,63 @@
 import React from 'react';
 import { useStore } from '../store';
 import { Mail, Phone, MapPin, Clock } from 'lucide-react';
+import PageHero from '../components/PageHero';
+import { useToast } from '../context/ToastContext';
+import api from '../services/api';
 
 const Contact = () => {
-  const { contactus } = useStore();
+  const { contactus, products } = useStore();
+  const { addToast } = useToast();
   const contactInfo = contactus[0];
+  const [submitting, setSubmitting] = React.useState(false);
+  const [form, setForm] = React.useState({
+    name: '',
+    email: '',
+    phone: '',
+    inquiry_type: 'Product',
+    product_id: '',
+    message: '',
+  });
 
   // Extract address for Google Maps
   const mapAddress = contactInfo?.address || 'India';
   const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(mapAddress)}`;
 
+  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const submitInquiry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await api.post('/inquiries', {
+        ...form,
+        product_id: form.product_id ? Number(form.product_id) : null,
+      });
+      addToast('Inquiry submitted successfully', 'success');
+      setForm({
+        name: '',
+        email: '',
+        phone: '',
+        inquiry_type: 'Product',
+        product_id: '',
+        message: '',
+      });
+    } catch (error: any) {
+      addToast(error?.response?.data?.message || 'Failed to submit inquiry', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-brand-600 to-brand-700 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl md:text-5xl font-bold font-serif mb-4">Get In Touch</h1>
-          <p className="text-xl text-brand-100">We'd love to hear from you. Reach out to us anytime!</p>
-        </div>
-      </div>
+      <PageHero
+        title="Get In Touch"
+        subtitle="We'd love to hear from you. Reach out to us anytime."
+        imageUrl="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1800&q=80"
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -94,28 +133,76 @@ const Contact = () => {
             </div>
           </div>
 
-          {/* Google Map */}
-          <div className="lg:sticky lg:top-24 h-fit">
+          <div className="space-y-8">
             <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-              <div className="p-6 bg-gradient-to-r from-brand-600 to-brand-700">
-                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <MapPin className="w-6 h-6" />
-                  Find Us Here
-                </h3>
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-2xl font-bold text-gray-900">Send Inquiry</h3>
               </div>
-              <div className="relative" style={{ height: '500px' }}>
-                <iframe
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={mapUrl}
-                  title="Google Maps Location"
-                ></iframe>
-              </div>
+              <form onSubmit={submitInquiry} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Full Name</label>
+                  <input name="name" value={form.name} onChange={onChange} required className="w-full border border-gray-300 rounded-lg p-3" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Email</label>
+                  <input type="email" name="email" value={form.email} onChange={onChange} required className="w-full border border-gray-300 rounded-lg p-3" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Mobile</label>
+                  <input name="phone" value={form.phone} onChange={onChange} className="w-full border border-gray-300 rounded-lg p-3" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Inquiry Type</label>
+                  <select name="inquiry_type" value={form.inquiry_type} onChange={onChange} className="w-full border border-gray-300 rounded-lg p-3">
+                    <option value="Product">Product</option>
+                    <option value="Delivery">Delivery</option>
+                    <option value="Price">Price</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                {form.inquiry_type === 'Product' && (
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">Product (Optional)</label>
+                    <select name="product_id" value={form.product_id} onChange={onChange} className="w-full border border-gray-300 rounded-lg p-3">
+                      <option value="">Select product</option>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Message</label>
+                  <textarea name="message" value={form.message} onChange={onChange} required rows={5} className="w-full border border-gray-300 rounded-lg p-3" />
+                </div>
+                <div className="md:col-span-2">
+                  <button disabled={submitting} className="w-full bg-brand-600 text-white py-3 rounded-lg font-bold hover:bg-brand-700 disabled:opacity-60">
+                    {submitting ? 'Sending...' : 'Send Inquiry'}
+                  </button>
+                </div>
+              </form>
             </div>
+          </div>
+        </div>
+
+        <div className="mt-10 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="p-6 bg-gradient-to-r from-brand-600 to-brand-700">
+            <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+              <MapPin className="w-6 h-6" />
+              Find Us Here
+            </h3>
+          </div>
+          <div className="relative" style={{ height: '420px' }}>
+            <iframe
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              loading="lazy"
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+              src={mapUrl}
+              title="Google Maps Location"
+            />
           </div>
         </div>
 

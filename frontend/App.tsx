@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { StoreProvider, useStore } from './store';
 import { ToastProvider } from './context/ToastContext';
 import Navbar from './components/Navbar';
@@ -25,8 +25,13 @@ import ProductView from './pages/admin/ProductView';
 import AdminUsers from './pages/admin/Users';
 import AdminStaff from './pages/admin/Staff';
 import AdminReports from './pages/admin/Reports';
+import AdminInquiries from './pages/admin/Inquiries';
 import AdminCategories from './pages/admin/Categories';
 import AdminBrands from './pages/admin/Brands';
+import RevenueTracker from './pages/admin/RevenueTracker';
+import AdminProfile from './pages/admin/Profile';
+import AdminSettings from './pages/admin/Settings';
+import AdminChangePassword from './pages/admin/ChangePassword';
 import UserDetail from './pages/admin/UserDetail';
 import StaffDetail from './pages/admin/StaffDetail';
 import OrderDetail from './pages/OrderDetail';
@@ -35,7 +40,8 @@ import Contact from './pages/Contact';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import PrivacyPolicyForm from './pages/admin/PrivacyPolicyForm';
 import { UserRole } from './types';
-import { LayoutDashboard, ShoppingBag, LogOut, Package, Users, BarChart3, Globe, Tag, Bookmark, User as UserIcon } from 'lucide-react';
+import { LogOut, Menu } from 'lucide-react';
+import AdminSidebar from './components/admin/AdminSidebar';
 
 
 // ... (keep existing imports)
@@ -58,7 +64,13 @@ const PublicLayout = ({ children }: { children: React.ReactNode }) => {
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
   const { user, logout, isLoading } = useStore();
-  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [collapsed, setCollapsed] = React.useState(false);
+
+  React.useEffect(() => {
+    const stored = (localStorage.getItem("admin-theme-mode") || "Light").toLowerCase();
+    document.documentElement.setAttribute("data-admin-theme", stored);
+  }, []);
 
   if (isLoading) {
     return (
@@ -68,65 +80,44 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user || (user.role !== UserRole.ADMIN && user.role !== UserRole.COMPANY)) {
+  const isAdminOrStaff =
+    user &&
+    (user.role === UserRole.ADMIN ||
+      user.role === UserRole.STAFF ||
+      user.role === UserRole.COMPANY);
+
+  if (!isAdminOrStaff || !user?.token) {
     return <Navigate to="/login" />;
   }
 
-  const navItems = [
-    { icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard', path: '/admin' },
-    { icon: <Package className="w-5 h-5" />, label: 'Products', path: '/admin/products' },
-    { icon: <Tag className="w-5 h-5" />, label: 'Categories', path: '/admin/categories' },
-    { icon: <Bookmark className="w-5 h-5" />, label: 'Brands', path: '/admin/brands' },
-    { icon: <ShoppingBag className="w-5 h-5" />, label: 'Orders', path: '/admin/orders' },
-    { icon: <Users className="w-5 h-5" />, label: 'Customers', path: '/admin/users' },
-    { icon: <UserIcon className="w-5 h-5" />, label: 'Staff', path: '/admin/staff' },
-    { icon: <Globe className="w-5 h-5" />, label: 'About Us', path: '/admin/aboutus' },
-    { icon: <Globe className="w-5 h-5" />, label: 'Contact Us', path: '/admin/contactus' },
-    { icon: <Globe className="w-5 h-5" />, label: 'Privacy Policy', path: '/admin/privacy' },
-    { icon: <BarChart3 className="w-5 h-5" />, label: 'Reports', path: '/admin/reports' },
-  ];
-
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col sticky top-0 h-screen">
-        <div className="p-6 border-b border-gray-200">
-           <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-brand-600 rounded-full flex items-center justify-center text-white font-bold font-serif">D</div>
-              <span className="font-serif font-bold text-xl text-gray-900">Admin Panel</span>
-            </div>
-        </div>
-        <div className="p-4 border-b border-gray-200">
-          <Link 
-            to="/" 
-            className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            <Globe className="w-5 h-5" />
-            Go to website
-          </Link>
-        </div>
-        <nav className="flex-1 p-4 space-y-2">
-          {navItems.map(item => (
-            <Link 
-              key={item.path} 
-              to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${location.pathname === item.path || location.pathname.startsWith(item.path + '/') ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50'}`}
-            >
-              {item.icon}
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="p-4 border-t border-gray-200">
-          <button onClick={logout} className="flex items-center gap-3 px-4 py-3 w-full text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium">
-            <LogOut className="w-5 h-5" /> Logout
-          </button>
-        </div>
-      </aside>
+    <div className="admin-shell flex min-h-screen bg-gray-100">
+      <AdminSidebar
+        role={user.role}
+        open={mobileOpen}
+        collapsed={collapsed}
+        onClose={() => setMobileOpen(false)}
+        onToggleCollapse={() => setCollapsed((prev) => !prev)}
+      />
 
       {/* Main Content */}
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto">
+        <div className="sticky top-0 z-20 bg-gray-100/95 backdrop-blur border-b border-gray-200 px-4 md:px-8 py-3 flex items-center justify-between">
+          <button
+            type="button"
+            className="md:hidden p-2 rounded-lg border border-gray-300 bg-white"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="text-sm text-gray-600 font-medium">Admin Workspace</div>
+          <button onClick={logout} className="inline-flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium">
+            <LogOut className="w-4 h-4" /> Logout
+          </button>
+        </div>
+        <div className="p-4 md:p-8">
         {children}
+        </div>
       </main>
     </div>
   );
@@ -170,6 +161,11 @@ const AppRoutes = () => {
       <Route path="/admin/staff" element={<AdminLayout><AdminStaff /></AdminLayout>} />
       <Route path="/admin/staff/:id" element={<AdminLayout><StaffDetail /></AdminLayout>} />
       <Route path="/admin/reports" element={<AdminLayout><AdminReports /></AdminLayout>} />
+      <Route path="/admin/inquiries" element={<AdminLayout><AdminInquiries /></AdminLayout>} />
+      <Route path="/admin/revenue-tracker" element={<AdminLayout><RevenueTracker /></AdminLayout>} />
+      <Route path="/admin/profile" element={<AdminLayout><AdminProfile /></AdminLayout>} />
+      <Route path="/admin/settings" element={<AdminLayout><AdminSettings /></AdminLayout>} />
+      <Route path="/admin/change-password" element={<AdminLayout><AdminChangePassword /></AdminLayout>} />
     </Routes>
   );
 };

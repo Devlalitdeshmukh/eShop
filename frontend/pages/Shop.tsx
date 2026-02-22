@@ -2,24 +2,38 @@ import React, { useState } from 'react';
 import { useStore } from '../store';
 import ProductCard from '../components/ProductCard';
 import { Search, X } from 'lucide-react';
+import PageHero from '../components/PageHero';
 
 const Shop = () => {
   const { products } = useStore();
   const [category, setCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const categories = ['All', 'Achar', 'Papad', 'Namkeen', 'Snacks'];
+  const categories = [
+    { label: 'All', match: null },
+    { label: 'Achar', match: 'achar' },
+    { label: 'Papad', match: 'papad' },
+    { label: 'Namkeen', match: 'namkeen' },
+    { label: 'Snacks', match: 'snack' },
+  ];
 
   const filteredProducts = products.filter(product => {
-    // Case-insensitive real-time filtering
-    const matchesCategory = category === 'All' || product.category === category;
+    const selectedCategory = categories.find((c) => c.label === category);
+    const productCategoryText = `${product.category} ${product.name}`.toLowerCase();
+    const matchesCategory =
+      !selectedCategory?.match || productCategoryText.includes(selectedCategory.match);
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
   return (
-    <div className="bg-gray-50 min-h-screen py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="bg-gray-50 min-h-screen">
+      <PageHero
+        title="Shop Our Collection"
+        subtitle="Browse authentic Achars, Crispy Papads, and Spicy Namkeens."
+        imageUrl="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1800&q=80"
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
           <div>
             <h1 className="font-serif text-3xl font-bold text-gray-900">Shop Our Collection</h1>
@@ -50,15 +64,15 @@ const Shop = () => {
         <div className="flex flex-wrap gap-2 mb-8">
           {categories.map(cat => (
             <button
-              key={cat}
-              onClick={() => setCategory(cat)}
+              key={cat.label}
+              onClick={() => setCategory(cat.label)}
               className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
-                category === cat 
+                category === cat.label
                   ? 'bg-brand-600 text-white shadow-md shadow-brand-200' 
                   : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
               }`}
             >
-              {cat}
+              {cat.label}
             </button>
           ))}
         </div>

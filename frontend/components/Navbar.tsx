@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Menu, X, User as UserIcon, LogOut } from 'lucide-react';
 import { useStore } from '../store';
 import { UserRole } from '../types';
@@ -8,6 +8,14 @@ const Navbar = () => {
   const { cart, user, logout } = useStore();
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const navClass = (path: string) => {
+    const active = location.pathname === path;
+    return active
+      ? 'px-4 py-2 rounded-xl bg-brand-50 text-brand-700 font-semibold'
+      : 'px-4 py-2 rounded-xl text-gray-700 hover:text-brand-600 hover:bg-gray-50 transition-colors';
+  };
 
   const handleLogout = () => {
     logout();
@@ -26,11 +34,11 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-8"> 
-            <Link to="/" className="text-gray-700 hover:text-brand-600 transition-colors">Home</Link>
-            <Link to="/about" className="text-gray-700 hover:text-brand-600 transition-colors">About</Link>
-            <Link to="/shop" className="text-gray-700 hover:text-brand-600 transition-colors">Shop</Link>
-            <Link to="/contact" className="text-gray-700 hover:text-brand-600 transition-colors">Contact</Link>
-            {(user?.role === UserRole.ADMIN || user?.role === UserRole.COMPANY) && (
+            <Link to="/" className={navClass('/')}>Home</Link>
+            <Link to="/about" className={navClass('/about')}>About</Link>
+            <Link to="/shop" className={navClass('/shop')}>Shop</Link>
+            <Link to="/contact" className={navClass('/contact')}>Contact</Link>
+            {(user?.role === UserRole.ADMIN || user?.role === UserRole.STAFF || user?.role === UserRole.COMPANY) && (
               <Link to="/admin" className="text-brand-600 font-semibold">Admin Panel</Link>
             )}
             
@@ -94,7 +102,7 @@ const Navbar = () => {
             <Link to="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-brand-600" onClick={() => setIsOpen(false)}>Home</Link>
             <Link to="/shop" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-brand-600" onClick={() => setIsOpen(false)}>Shop</Link>
             <Link to="/contact" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-brand-600" onClick={() => setIsOpen(false)}>Contact</Link>
-            {(user?.role === UserRole.ADMIN || user?.role === UserRole.COMPANY) && (
+            {(user?.role === UserRole.ADMIN || user?.role === UserRole.STAFF || user?.role === UserRole.COMPANY) && (
               <Link to="/admin" className="block px-3 py-2 rounded-md text-base font-medium text-brand-600 hover:bg-gray-50" onClick={() => setIsOpen(false)}>Admin Panel</Link>
             )}
             {user ? (

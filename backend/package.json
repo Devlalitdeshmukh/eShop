@@ -1,4 +1,3 @@
-
 {
   "name": "desi-delights-api",
   "version": "1.0.0",
@@ -7,7 +6,12 @@
   "main": "backend/server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "cross-env NODE_ENV=development node --watch server.js",
+    "dev:local": "cross-env NODE_ENV=local node --watch server.js",
+    "dev:development": "cross-env NODE_ENV=development node --watch server.js",
+    "start:local": "cross-env NODE_ENV=local node server.js",
+    "start:development": "cross-env NODE_ENV=development node server.js",
+    "start:production": "cross-env NODE_ENV=production node server.js"
   },
   "dependencies": {
     "axios": "^1.6.0",
@@ -17,6 +21,12 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
-    "mysql2": "^3.16.0"
+    "mysql2": "^3.16.0",
+    "nodemailer": "^8.0.1",
+    "pdfkit": "^0.17.2",
+    "redis": "^5.11.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
   }
 }

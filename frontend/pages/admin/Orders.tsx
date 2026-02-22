@@ -2,17 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { Eye, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import Pagination from '../../components/admin/Pagination';
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const { data } = await api.get('/orders');
-        setOrders(data);
+        const { data } = await api.get(`/orders?page=${page}&limit=10`);
+        if (Array.isArray(data)) {
+          setOrders(data);
+          setTotalPages(1);
+        } else {
+          setOrders(data.items || []);
+          setTotalPages(data.totalPages || 1);
+        }
       } catch (error) {
         console.error('Failed to fetch orders', error);
       } finally {
@@ -20,7 +29,7 @@ const AdminOrders = () => {
       }
     };
     fetchOrders();
-  }, []);
+  }, [page]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -110,6 +119,7 @@ const AdminOrders = () => {
             </table>
           </div>
         )}
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
     </div>
   );

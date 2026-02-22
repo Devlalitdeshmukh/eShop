@@ -4,6 +4,7 @@ import { staffService } from '../../services/staffService';
 import { Trash2, Shield, Eye, UserCog, Calendar, Plus, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
+import Pagination from '../../components/admin/Pagination';
 
 const AdminStaff = () => {
   const { addToast } = useToast();
@@ -11,6 +12,8 @@ const AdminStaff = () => {
   const [staff, setStaff] = useState<any[]>([]);
   const [holidays, setHolidays] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [staffPage, setStaffPage] = useState(1);
+  const [staffTotalPages, setStaffTotalPages] = useState(1);
   
   // New Holiday Form State
   const [showHolidayModal, setShowHolidayModal] = useState(false);
@@ -18,10 +21,10 @@ const AdminStaff = () => {
 
   const fetchStaff = async () => {
     try {
-      const { data } = await api.get('/users');
-      // Filter to show only company staff and admins
-      const staffMembers = data.filter((user: any) => user.role === 'COMPANY' || user.role === 'ADMIN');
+      const { data } = await api.get(`/users?roles=STAFF,COMPANY,ADMIN&page=${staffPage}&limit=10`);
+      const staffMembers = Array.isArray(data) ? data : data.items || [];
       setStaff(staffMembers);
+      setStaffTotalPages(Array.isArray(data) ? 1 : data.totalPages || 1);
     } catch (error) {
       console.warn("Failed to fetch staff");
     }
@@ -44,7 +47,7 @@ const AdminStaff = () => {
       setLoading(false);
     };
     init();
-  }, []);
+  }, [staffPage]);
 
   const handleDeleteStaff = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this staff member? This cannot be undone.')) {
@@ -125,8 +128,9 @@ const AdminStaff = () => {
           <>
             {/* STAFF LIST TAB */}
             {activeTab === 'list' && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
+              <div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
                   <thead className="bg-gray-50 text-gray-500 text-[10px] uppercase font-black tracking-widest">
                     <tr>
                       <th className="px-6 py-4 font-medium">Staff Member</th>
@@ -192,7 +196,9 @@ const AdminStaff = () => {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                  </table>
+                </div>
+                <Pagination page={staffPage} totalPages={staffTotalPages} onPageChange={setStaffPage} />
               </div>
             )}
 

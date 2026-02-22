@@ -3,9 +3,18 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "backend": "npx nodemon backend/server.js",
-    "frontend": "npm run dev --prefix frontend",
-    "dev": "npm-run-all --parallel backend frontend"
+    "backend": "npm run dev:local --prefix backend",
+    "frontend": "npm run dev:local --prefix frontend",
+    "dev": "npm-run-all --parallel backend frontend",
+    "backend:local": "npm run dev:local --prefix backend",
+    "backend:development": "npm run dev:development --prefix backend",
+    "backend:production": "npm run start:production --prefix backend",
+    "frontend:local": "npm run dev:local --prefix frontend",
+    "frontend:development": "npm run dev:development --prefix frontend",
+    "frontend:production": "npm run build:production --prefix frontend",
+    "dev:local": "npm-run-all --parallel backend:local frontend:local",
+    "dev:development": "npm-run-all --parallel backend:development frontend:development",
+    "start:production": "npm-run-all frontend:production backend:production"
   },
   "devDependencies": {
     "nodemon": "^3.1.0",

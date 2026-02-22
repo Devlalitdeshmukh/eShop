@@ -1,5 +1,22 @@
 import pool from "../config/db.js";
 
+const normalizeRole = (role) => (role || "").toString().trim().toUpperCase();
+const isAdmin = (role) => normalizeRole(role) === "ADMIN";
+const isStaffRole = (role) =>
+  ["STAFF", "COMPANY"].includes(normalizeRole(role));
+const isPrivileged = (role) => isAdmin(role) || isStaffRole(role);
+
+const resolveScopedUserId = (req, requestedUserId) => {
+  const currentUserId = Number(req.user?.id);
+  const requested = requestedUserId ? Number(requestedUserId) : currentUserId;
+
+  if (!isPrivileged(req.user?.role) && requested !== currentUserId) {
+    return null;
+  }
+
+  return requested;
+};
+
 // ============ ATTENDANCE ============
 
 export const markAttendance = async (req, res) => {
@@ -7,8 +24,18 @@ export const markAttendance = async (req, res) => {
     req.body;
 
   try {
+    const scopedUserId = resolveScopedUserId(req, user_id);
+    if (!scopedUserId) {
+      return res.status(403).json({ message: "Not authorized for this user" });
+    }
+
+    const allowedStatuses = ["Present", "Absent", "Half Day", "Late"];
+    if (status && !allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid attendance status" });
+    }
+
     const [result] = await pool.query(
-      `INSERT INTO attendance (user_id, date, check_in, check_out, status, notes, working_hours) 
+      `INSERT INTO staff_attendance (user_id, date, check_in, check_out, status, notes, working_hours) 
        VALUES (?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE 
        check_in = VALUES(check_in), 
@@ -16,7 +43,7 @@ export const markAttendance = async (req, res) => {
        status = VALUES(status), 
        notes = VALUES(notes),
        working_hours = VALUES(working_hours)`,
-      [user_id, date, check_in, check_out, status, notes, working_hours],
+      [scopedUserId, date, check_in, check_out, status, notes, working_hours],
     );
 
     res.json({
@@ -32,17 +59,25 @@ export const getAttendance = async (req, res) => {
   const { user_id, start_date, end_date } = req.query;
 
   try {
+    const scopedUserId = resolveScopedUserId(req, user_id);
+    if (!scopedUserId) {
+      return res.status(403).json({ message: "Not authorized for this user" });
+    }
+
     let query = `
       SELECT a.*, u.name as user_name, u.email 
-      FROM attendance a
+      FROM staff_attendance a
       JOIN users u ON a.user_id = u.id
       WHERE 1=1
     `;
     const params = [];
 
-    if (user_id) {
+    if (isAdmin(req.user?.role) && user_id) {
       query += ` AND a.user_id = ?`;
-      params.push(user_id);
+      params.push(scopedUserId);
+    } else {
+      query += ` AND a.user_id = ?`;
+      params.push(scopedUserId);
     }
 
     if (start_date && end_date) {
@@ -63,6 +98,11 @@ export const getAttendanceStats = async (req, res) => {
   const { user_id, month, year } = req.query;
 
   try {
+    const scopedUserId = resolveScopedUserId(req, user_id);
+    if (!scopedUserId) {
+      return res.status(403).json({ message: "Not authorized for this user" });
+    }
+
     const [stats] = await pool.query(
       `SELECT 
         COUNT(*) as total_days,
@@ -70,11 +110,11 @@ export const getAttendanceStats = async (req, res) => {
         SUM(CASE WHEN status = 'Absent' THEN 1 ELSE 0 END) as absent_days,
         SUM(CASE WHEN status = 'Half Day' THEN 0.5 ELSE 0 END) as half_days,
         SUM(CASE WHEN status = 'Late' THEN 1 ELSE 0 END) as late_days
-      FROM attendance
+      FROM staff_attendance
       WHERE user_id = ? 
       AND MONTH(date) = ? 
       AND YEAR(date) = ?`,
-      [user_id, month, year],
+      [scopedUserId, month, year],
     );
 
     res.json(stats[0]);
@@ -100,11 +140,16 @@ export const applyLeave = async (req, res) => {
   } = req.body;
 
   try {
+    const scopedUserId = resolveScopedUserId(req, user_id);
+    if (!scopedUserId) {
+      return res.status(403).json({ message: "Not authorized for this user" });
+    }
+
     const [result] = await pool.query(
-      `INSERT INTO leaves (user_id, leave_name, work_handover_to, start_date, from_leave_type, end_date, to_leave_type, leave_reason, notes, document_url, status) 
+      `INSERT INTO staff_leaves (user_id, leave_name, work_handover_to, start_date, from_leave_type, end_date, to_leave_type, leave_reason, notes, document_url, status) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')`,
       [
-        user_id,
+        scopedUserId,
         leave_name,
         work_handover_to,
         start_date,
@@ -133,21 +178,29 @@ export const getLeaves = async (req, res) => {
   const { user_id, status } = req.query;
 
   try {
+    const scopedUserId = resolveScopedUserId(req, user_id);
+    if (!scopedUserId) {
+      return res.status(403).json({ message: "Not authorized for this user" });
+    }
+
     let query = `
       SELECT l.*, 
         u.name as user_name, 
         u.email,
         approver.name as approved_by_name
-      FROM leaves l
+      FROM staff_leaves l
       JOIN users u ON l.user_id = u.id
       LEFT JOIN users approver ON l.approved_by = approver.id
       WHERE 1=1
     `;
     const params = [];
 
-    if (user_id) {
+    if (isAdmin(req.user?.role) && user_id) {
       query += ` AND l.user_id = ?`;
-      params.push(user_id);
+      params.push(scopedUserId);
+    } else {
+      query += ` AND l.user_id = ?`;
+      params.push(scopedUserId);
     }
 
     if (status) {
@@ -166,14 +219,19 @@ export const getLeaves = async (req, res) => {
 
 export const updateLeaveStatus = async (req, res) => {
   const { id } = req.params;
-  const { status, approved_by } = req.body;
+  const { status } = req.body;
 
   try {
+    const allowedStatuses = ["Pending", "Approved", "Rejected"];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid leave status" });
+    }
+
     const [result] = await pool.query(
-      `UPDATE leaves 
+      `UPDATE staff_leaves 
        SET status = ?, approved_by = ?, approved_at = CURRENT_TIMESTAMP 
        WHERE id = ?`,
-      [status, approved_by, id],
+      [status, req.user.id, id],
     );
 
     if (result.affectedRows > 0) {
@@ -190,9 +248,14 @@ export const getLeaveBalance = async (req, res) => {
   const { user_id, year } = req.query;
 
   try {
+    const scopedUserId = resolveScopedUserId(req, user_id);
+    if (!scopedUserId) {
+      return res.status(403).json({ message: "Not authorized for this user" });
+    }
+
     const [balance] = await pool.query(
       `SELECT * FROM leave_balance WHERE user_id = ? AND year = ?`,
-      [user_id, year || new Date().getFullYear()],
+      [scopedUserId, year || new Date().getFullYear()],
     );
 
     if (balance.length > 0) {
@@ -202,7 +265,7 @@ export const getLeaveBalance = async (req, res) => {
       const currentYear = year || new Date().getFullYear();
       const [result] = await pool.query(
         `INSERT INTO leave_balance (user_id, year) VALUES (?, ?)`,
-        [user_id, currentYear],
+        [scopedUserId, currentYear],
       );
 
       const [newBalance] = await pool.query(

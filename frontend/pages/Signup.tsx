@@ -11,8 +11,7 @@ const Signup = () => {
     password: '',
     confirmPassword: '',
     mobile: '',
-    gender: 'Male',
-    role: 'CUSTOMER'
+    gender: 'Male'
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -39,8 +38,7 @@ const Signup = () => {
         email: formData.email,
         password: formData.password,
         mobile: formData.mobile,
-        gender: formData.gender,
-        role: formData.role
+        gender: formData.gender
       });
       
       setAuthUser(data);
@@ -168,33 +166,18 @@ const Signup = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-bold text-gray-700 ml-1">Gender</label>
-                  <select
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-bold text-gray-700 ml-1">Role</label>
-                  <select
-                    name="role"
-                    value={formData.role}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="CUSTOMER">Customer</option>
-                    <option value="COMPANY">Company</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
-                </div>
+              <div className="space-y-1">
+                <label className="text-sm font-bold text-gray-700 ml-1">Gender</label>
+                <select
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all appearance-none cursor-pointer"
+                >
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
             </div>
 

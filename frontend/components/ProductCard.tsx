@@ -6,10 +6,12 @@ import { useStore } from '../store';
 
 interface Props {
   product: Product;
+  showDescription?: boolean;
 }
 
-const ProductCard: React.FC<Props> = ({ product }) => {
+const ProductCard: React.FC<Props> = ({ product, showDescription = false }) => {
   const { addToCart } = useStore();
+  const outOfStock = product.stock <= 0;
 
   return (
     <div className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col h-full">
@@ -36,6 +38,9 @@ const ProductCard: React.FC<Props> = ({ product }) => {
         <Link to={`/product/${product.id}`} className="block">
           <h3 className="font-serif font-bold text-lg text-gray-900 mb-2 group-hover:text-brand-600 transition-colors line-clamp-1">{product.name}</h3>
         </Link>
+        {showDescription && (
+          <p className="text-sm text-gray-500 mb-3 line-clamp-2">{product.description}</p>
+        )}
         <div className="flex items-center gap-1 mb-3">
           <Star className="w-4 h-4 text-yellow-400 fill-current" />
           <span className="text-sm font-medium text-gray-700">{product.rating}</span>
@@ -56,7 +61,8 @@ const ProductCard: React.FC<Props> = ({ product }) => {
           
           <button 
             onClick={() => addToCart(product, 1)}
-            className="p-3 bg-gray-900 text-white rounded-xl hover:bg-brand-600 transition-colors shadow-lg shadow-gray-200"
+            disabled={outOfStock}
+            className={`p-3 rounded-xl transition-colors shadow-lg ${outOfStock ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-gray-100' : 'bg-gray-900 text-white hover:bg-brand-600 shadow-gray-200'}`}
             aria-label="Add to Cart"
           >
             <ShoppingBag className="w-5 h-5" />

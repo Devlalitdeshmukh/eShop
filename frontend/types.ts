@@ -1,5 +1,6 @@
 export enum UserRole {
   ADMIN = 'ADMIN',
+  STAFF = 'STAFF',
   COMPANY = 'COMPANY',
   CUSTOMER = 'CUSTOMER'
 }
@@ -38,6 +39,9 @@ export interface Product {
   stock: number;
   isSpicy?: boolean;
   expiryDate?: string;
+  isBestSelling?: boolean;
+  totalSales?: number;
+  season?: 'Summer' | 'Winter' | 'Festival' | 'All';
   variants?: ProductVariant[];
 }
 

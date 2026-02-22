@@ -45,7 +45,15 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
   const [user, setUser] = useState<User | null>(null);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    const saved = localStorage.getItem('cartItems');
+    if (!saved) return [];
+    try {
+      return JSON.parse(saved) as CartItem[];
+    } catch {
+      return [];
+    }
+  });
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
   const [products, setProducts] = useState<Product[]>(PRODUCTS);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,6 +95,10 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     fetchContactus();
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem('cartItems', JSON.stringify(cart));
+  }, [cart]);
+
   const login = async (email: string, password: string) => {
     try {
       const { data } = await api.post('/auth/login', { email, password });
@@ -100,33 +112,8 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       };
       localStorage.setItem('userInfo', JSON.stringify({ ...userData, token: data.token }));
       setUser(userData);
-      setUser(userData);
     } catch (error: any) {
-      // If authenticating with backend failed with 400/401, do NOT use mock login.
-      // This prevents "fake" logins that fail on subsequent API calls.
-      if (error.response && (error.response.status === 400 || error.response.status === 401)) {
-        throw error;
-      }
-
-      console.warn("Backend login failed, using mock login.");
-      // For mock login, determine role based on email
-      let role: UserRole = UserRole.CUSTOMER;
-      // Check for admin email patterns
-      if (email.toLowerCase() === 'admin@example.com' || 
-          email.toLowerCase().includes('admin@') || 
-          email.toLowerCase().includes('@admin.')) {
-        role = UserRole.ADMIN;
-      }
-      
-      const mockUser: User = {
-        id: '123',
-        name: email.split('@')[0],
-        email,
-        role,
-        avatar: 'https://ui-avatars.com/api/?name=User&background=random'
-      };
-      setUser(mockUser);
-      localStorage.setItem('userInfo', JSON.stringify(mockUser));
+      throw error;
     }
   };
 

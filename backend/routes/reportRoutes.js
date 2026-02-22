@@ -1,10 +1,10 @@
 import express from 'express';
 import { getProductReports, getOrderAnalytics } from '../controllers/reportController.js';
-import { protect, admin } from '../middlewares/authMiddleware.js';
+import { protect, adminOrStaff } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/', protect, admin, getProductReports);
-router.get('/analytics', protect, admin, getOrderAnalytics);
+router.get('/', protect, adminOrStaff, getProductReports);
+router.get('/analytics', protect, adminOrStaff, getOrderAnalytics);
 
 export default router;

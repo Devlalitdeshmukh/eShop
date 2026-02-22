@@ -1,3 +1,58 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Admin theme modes */
+[data-admin-theme="light"] .admin-shell {
+  background-color: #f3f4f6;
+}
+
+[data-admin-theme="dark"] .admin-shell {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+[data-admin-theme="dark"] .admin-shell .bg-white {
+  background-color: #111827 !important;
+  color: #e5e7eb !important;
+}
+
+[data-admin-theme="dark"] .admin-shell .bg-gray-50,
+[data-admin-theme="dark"] .admin-shell .bg-gray-100 {
+  background-color: #1f2937 !important;
+}
+
+[data-admin-theme="dark"] .admin-shell .border-gray-200,
+[data-admin-theme="dark"] .admin-shell .border-gray-100,
+[data-admin-theme="dark"] .admin-shell .border-gray-300 {
+  border-color: #334155 !important;
+}
+
+[data-admin-theme="dark"] .admin-shell .text-gray-900 {
+  color: #f8fafc !important;
+}
+
+[data-admin-theme="dark"] .admin-shell .text-gray-700,
+[data-admin-theme="dark"] .admin-shell .text-gray-600,
+[data-admin-theme="dark"] .admin-shell .text-gray-500 {
+  color: #cbd5e1 !important;
+}
+
+[data-admin-theme="orange"] .admin-shell {
+  background-color: #fff7ed;
+}
+
+[data-admin-theme="orange"] .admin-shell .bg-white {
+  background-color: #fffaf5 !important;
+}
+
+[data-admin-theme="orange"] .admin-shell .bg-gray-50,
+[data-admin-theme="orange"] .admin-shell .bg-gray-100 {
+  background-color: #ffedd5 !important;
+}
+
+[data-admin-theme="orange"] .admin-shell .border-gray-200,
+[data-admin-theme="orange"] .admin-shell .border-gray-100,
+[data-admin-theme="orange"] .admin-shell .border-gray-300 {
+  border-color: #fdba74 !important;
+}

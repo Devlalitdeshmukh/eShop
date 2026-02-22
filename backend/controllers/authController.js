@@ -9,7 +9,7 @@ const generateToken = (id) => {
 };
 
 export const registerUser = async (req, res) => {
-  const { name, email, password, mobile, gender, role } = req.body;
+  const { name, email, password, mobile, gender } = req.body;
 
   try {
     const [userExists] = await pool.query(
@@ -23,7 +23,7 @@ export const registerUser = async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    const userRole = role || "CUSTOMER";
+    const userRole = "CUSTOMER";
 
     const [result] = await pool.query(
       "INSERT INTO users (name, email, password, mobile, gender, role) VALUES (?, ?, ?, ?, ?, ?)",

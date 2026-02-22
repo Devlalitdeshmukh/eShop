@@ -2,6 +2,7 @@ import path from 'path';
 import express from 'express';
 import multer from 'multer';
 import fs from 'fs';
+import { protect, adminOrStaff } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -44,7 +45,7 @@ const upload = multer({
 });
 
 // Post route to handle single image upload
-router.post('/', upload.single('image'), (req, res) => {
+router.post('/', protect, adminOrStaff, upload.single('image'), (req, res) => {
   if (req.file) {
     // Normalize path separators for Windows/Unix compatibility in URLs
     const filePath = req.file.path.replace(/\\/g, '/');

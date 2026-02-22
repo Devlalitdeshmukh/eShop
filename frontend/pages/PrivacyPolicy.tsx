@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import api from '../services/api';
+import PageHero from '../components/PageHero';
 
 const PrivacyPolicy = () => {
   const [content, setContent] = useState('');
@@ -31,20 +32,11 @@ const PrivacyPolicy = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-brand-600 to-brand-700 text-white py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-              <Shield className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold font-serif">Privacy Policy</h1>
-              <p className="text-xl text-brand-100 mt-2">Your privacy is important to us</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageHero
+        title="Privacy Policy"
+        subtitle="Your privacy is important to us."
+        imageUrl="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1800&q=80"
+      />
 
       {/* Content Section */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

@@ -30,9 +30,31 @@ const setupTables = async () => {
     `);
     console.log("Privacy Policy table checked/created.");
 
-    // Create Attendance table (if not exists)
+    // Create Inquiries table
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS attendance (
+      CREATE TABLE IF NOT EXISTS inquiries (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NULL,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(150) NOT NULL,
+        phone VARCHAR(20),
+        inquiry_type ENUM('Product','Delivery','Price','Other') NOT NULL,
+        product_id BIGINT UNSIGNED NULL,
+        message TEXT NOT NULL,
+        status ENUM('New','Working','Resolved','Completed') DEFAULT 'New',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
+        INDEX idx_inquiry_status (status),
+        INDEX idx_inquiry_type (inquiry_type)
+      )
+    `);
+    console.log("Inquiries table checked/created.");
+
+    // Create Staff Attendance table (if not exists)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS staff_attendance (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
         date DATE NOT NULL,
@@ -47,23 +69,23 @@ const setupTables = async () => {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )
     `);
-    console.log("Attendance table checked/created.");
+    console.log("Staff attendance table checked/created.");
 
-    // Add working_hours to attendance if it doesn't exist
+    // Add working_hours to staff_attendance if it doesn't exist
     try {
       await pool.query(
-        `ALTER TABLE attendance ADD COLUMN working_hours VARCHAR(50)`,
+        `ALTER TABLE staff_attendance ADD COLUMN working_hours VARCHAR(50)`,
       );
     } catch (e) {
       /* ignore if exists */
     }
 
-    // Create Leaves table
+    // Create Staff Leaves table
     // DROP TABLE to ensure schema update because we changed it significantly
-    await pool.query(`DROP TABLE IF EXISTS leaves`);
+    await pool.query(`DROP TABLE IF EXISTS staff_leaves`);
 
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS leaves (
+      CREATE TABLE IF NOT EXISTS staff_leaves (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
         leave_name VARCHAR(255) NOT NULL,
@@ -84,7 +106,7 @@ const setupTables = async () => {
         FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
-    console.log("Leaves table checked/created.");
+    console.log("Staff leaves table checked/created.");
 
     // Add columns to contactus if they don't exist (in case table existed with just title/desc)
     try {

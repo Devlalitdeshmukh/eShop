@@ -3,17 +3,20 @@ import api from '../../services/api';
 import { User, UserRole } from '../../types';
 import { Trash2, User as UserIcon, Shield, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Pagination from '../../components/admin/Pagination';
 
 const AdminUsers = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchUsers = async () => {
     try {
-      const { data } = await api.get('/users');
-      // Filter to show only customers (exclude admin and company staff)
-      const customers = data.filter((user: any) => user.role === 'CUSTOMER');
+      const { data } = await api.get(`/users?role=CUSTOMER&page=${page}&limit=10`);
+      const customers = Array.isArray(data) ? data : data.items || [];
       setUsers(customers);
+      setTotalPages(Array.isArray(data) ? 1 : data.totalPages || 1);
     } catch (error) {
       console.warn("Failed to fetch users, using mock data");
       // Mock data for display if backend fails - only customers
@@ -21,6 +24,7 @@ const AdminUsers = () => {
         { id: '2', name: 'Rahul Gupta', email: 'rahul@example.com', role: 'CUSTOMER', created_at: '2023-10-15', totalOrders: 2, totalAmount: 611 },
         { id: '3', name: 'Priya Singh', email: 'priya@example.com', role: 'CUSTOMER', created_at: '2023-11-20', totalOrders: 0, totalAmount: 0 },
       ]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -41,7 +45,7 @@ const AdminUsers = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [page]);
 
   return (
     <div className="space-y-6">
@@ -126,6 +130,7 @@ const AdminUsers = () => {
             </table>
           </div>
         )}
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
     </div>
   );

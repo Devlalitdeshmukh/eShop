@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Truck, ShieldCheck, Leaf } from 'lucide-react';
 import { useStore } from '../store';
 import ProductCard from '../components/ProductCard';
+import PageHero from '../components/PageHero';
 
 const About = () => {
 
@@ -16,28 +17,13 @@ const About = () => {
 
     return (
         <div>
-              {/* Hero Section */}
-              <section className="relative bg-brand-50 py-20 lg:py-32 overflow-hidden">
-                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-brand-200 rounded-full blur-3xl opacity-50"></div>
-                <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 bg-yellow-200 rounded-full blur-3xl opacity-50"></div>
-                
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-                  <div className="lg:w-1/2">
-                    <h1 className="font-serif text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-6">
-                      Healthy Foods for  <span className="text-brand-600">Happy Life</span> Tradition
-                    </h1>
-                    
-                    <div className="flex gap-4">
-                      <Link to="/shop" className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-brand-600 hover:bg-brand-700 md:text-lg shadow-lg hover:shadow-xl transition-all">
-                        Shop Now
-                      </Link>
-                      <Link to="/shop" className="inline-flex items-center justify-center px-8 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 md:text-lg">
-                        View Bestsellers
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </section>
+              <PageHero
+                title="Healthy Foods for a Happy Life"
+                subtitle="Discover our story, our values, and our authentic homemade taste."
+                imageUrl="https://images.unsplash.com/photo-1464219222984-216ebffaaf85?auto=format&fit=crop&w=1800&q=80"
+                ctaLabel="Shop Now"
+                ctaTo="/shop"
+              />
 
               <section className="py-20 bg-gray-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

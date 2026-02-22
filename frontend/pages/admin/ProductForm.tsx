@@ -24,6 +24,8 @@ const ProductForm = () => {
     description: '',
     image: '',
     isSpicy: false,
+    isBestSelling: false,
+    season: 'All' as 'Summer' | 'Winter' | 'Festival' | 'All',
     expiryDate: '',
     variants: [] as ProductVariant[]
   });
@@ -73,6 +75,8 @@ const ProductForm = () => {
           description: product.description,
           image: product.image,
           isSpicy: product.isSpicy || false,
+          isBestSelling: product.isBestSelling || false,
+          season: product.season || 'All',
           expiryDate: product.expiryDate || '',
           variants: product.variants || []
         });
@@ -194,6 +198,16 @@ const ProductForm = () => {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Season</label>
+              <select name="season" value={formData.season} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-500 outline-none">
+                <option value="All">All</option>
+                <option value="Summer">Summer</option>
+                <option value="Winter">Winter</option>
+                <option value="Festival">Festival</option>
+              </select>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Base Price (₹)</label>
               <input type="number" required name="price" value={formData.price} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-500 outline-none" />
             </div>
@@ -259,6 +273,19 @@ const ProductForm = () => {
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
               <textarea required name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-brand-500 outline-none" />
+            </div>
+
+            <div className="col-span-2">
+              <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+                <input
+                  type="checkbox"
+                  name="isBestSelling"
+                  checked={formData.isBestSelling}
+                  onChange={handleChange}
+                  className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                />
+                Mark as Best Selling Product
+              </label>
             </div>
 
             <div className="col-span-2">

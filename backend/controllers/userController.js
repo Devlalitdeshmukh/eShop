@@ -1,19 +1,62 @@
 import pool from "../config/db.js";
 import bcrypt from "bcryptjs";
+import { buildPaginatedResponse, parsePagination } from "../utils/pagination.js";
 
 export const getUsers = async (req, res) => {
   try {
-    const [users] = await pool.query(`
-      SELECT 
+    const { hasPagination, page, limit, offset } = parsePagination(req.query, {
+      page: 1,
+      limit: 10,
+      maxLimit: 100,
+    });
+    const role = req.query.role ? String(req.query.role).toUpperCase() : null;
+    const rolesRaw = req.query.roles ? String(req.query.roles) : "";
+    const roles = rolesRaw
+      .split(",")
+      .map((r) => r.trim().toUpperCase())
+      .filter(Boolean);
+
+    let whereClause = "";
+    const countParams = [];
+
+    if (role) {
+      whereClause = "WHERE u.role = ?";
+      countParams.push(role);
+    } else if (roles.length) {
+      whereClause = `WHERE u.role IN (${roles.map(() => "?").join(",")})`;
+      countParams.push(...roles);
+    }
+
+    const [users] = await pool.query(
+      `SELECT
         u.id, u.name, u.email, u.role, u.created_at,
         COUNT(o.id) as totalOrders,
         IFNULL(SUM(o.totalPrice), 0) as totalAmount
       FROM users u
       LEFT JOIN orders o ON u.id = o.user_id
+      ${whereClause}
       GROUP BY u.id
-      ORDER BY u.created_at DESC
-    `);
-    res.json(users);
+      ORDER BY u.created_at DESC${hasPagination ? " LIMIT ? OFFSET ?" : ""}`,
+      hasPagination ? [...countParams, limit, offset] : countParams
+    );
+
+    if (!hasPagination) {
+      return res.json(users);
+    }
+
+    const [[countRow]] = await pool.query(
+      `SELECT COUNT(*) AS total FROM users u ${whereClause}`,
+      countParams
+    );
+
+    return res.json(
+      buildPaginatedResponse({
+        rows: users,
+        total: Number(countRow.total || 0),
+        page,
+        limit,
+      })
+    );
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

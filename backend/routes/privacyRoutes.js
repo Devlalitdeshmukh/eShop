@@ -3,11 +3,11 @@ import {
   getPrivacyPolicy,
   updatePrivacyPolicy,
 } from "../controllers/privacyController.js";
-import { protect, admin } from "../middlewares/authMiddleware.js";
+import { protect, adminOrStaff } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
 router.get("/", getPrivacyPolicy);
-router.put("/", protect, admin, updatePrivacyPolicy);
+router.put("/", protect, adminOrStaff, updatePrivacyPolicy);
 
 export default router;

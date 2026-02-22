@@ -1,4 +1,7 @@
 import pool from "../config/db.js";
+import { delCache } from "../utils/cache.js";
+import PDFDocument from "pdfkit";
+import { buildPaginatedResponse, parsePagination } from "../utils/pagination.js";
 
 export const createOrder = async (req, res) => {
   const { items, total, paymentMethod, shippingAddress } = req.body;
@@ -44,12 +47,19 @@ export const createOrder = async (req, res) => {
 
       // Update product stock
       await connection.query(
-        "UPDATE products SET stock = stock - ? WHERE id = ?",
-        [item.quantity, item.id]
+        "UPDATE products SET stock = stock - ?, total_sales = total_sales + ? WHERE id = ?",
+        [item.quantity, item.quantity, item.id]
       );
     }
 
     await connection.commit();
+    await delCache([
+      "products:best-selling",
+      "products:season:all",
+      "products:season:summer",
+      "products:season:winter",
+      "products:season:festival",
+    ]);
     res.status(201).json({
       id: orderId,
       order_no: orderNo,
@@ -78,10 +88,30 @@ export const getMyOrders = async (req, res) => {
 
 export const getAllOrders = async (req, res) => {
   try {
+    const { hasPagination, page, limit, offset } = parsePagination(req.query, {
+      page: 1,
+      limit: 10,
+      maxLimit: 100,
+    });
+
     const [orders] = await pool.query(
-      "SELECT * FROM orders ORDER BY created_at DESC"
+      `SELECT * FROM orders ORDER BY created_at DESC${hasPagination ? " LIMIT ? OFFSET ?" : ""}`,
+      hasPagination ? [limit, offset] : []
     );
-    res.json(orders);
+
+    if (!hasPagination) {
+      return res.json(orders);
+    }
+
+    const [[countRow]] = await pool.query("SELECT COUNT(*) AS total FROM orders");
+    return res.json(
+      buildPaginatedResponse({
+        rows: orders,
+        total: Number(countRow.total || 0),
+        page,
+        limit,
+      })
+    );
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -218,6 +248,117 @@ export const getOrderAnalytics = async (req, res) => {
       topSellingProducts: topSellingResult,
       lowInventoryProducts: inventoryResult,
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getRevenueTracker = async (_req, res) => {
+  try {
+    const [[overall]] = await pool.query(`
+      SELECT
+        IFNULL(SUM(totalPrice), 0) AS totalRevenue,
+        COUNT(*) AS totalOrders
+      FROM orders
+      WHERE status IN ('Paid', 'Processing', 'Shipped', 'Delivered')
+    `);
+
+    const [[monthly]] = await pool.query(`
+      SELECT
+        IFNULL(SUM(totalPrice), 0) AS monthlyRevenue,
+        COUNT(*) AS monthlyOrders
+      FROM orders
+      WHERE created_at >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')
+      AND status IN ('Paid', 'Processing', 'Shipped', 'Delivered')
+    `);
+
+    const [recentOrders] = await pool.query(`
+      SELECT id, order_no, totalPrice, status, paymentMethod, created_at
+      FROM orders
+      ORDER BY created_at DESC
+      LIMIT 15
+    `);
+
+    res.json({
+      totalRevenue: Number(overall.totalRevenue || 0),
+      totalOrders: Number(overall.totalOrders || 0),
+      monthlyRevenue: Number(monthly.monthlyRevenue || 0),
+      monthlyOrders: Number(monthly.monthlyOrders || 0),
+      recentOrders,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const downloadInvoicePdf = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const [orders] = await pool.query(
+      "SELECT * FROM orders WHERE id = ? OR order_no = ?",
+      [id, id]
+    );
+
+    if (!orders.length) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const order = orders[0];
+    if (
+      req.user?.roleCanonical !== "ADMIN" &&
+      req.user?.roleCanonical !== "STAFF" &&
+      req.user?.id !== order.user_id
+    ) {
+      return res.status(403).json({ message: "Not authorized to download invoice" });
+    }
+
+    const [items] = await pool.query(
+      "SELECT name, qty, price FROM order_items WHERE order_id = ?",
+      [order.id]
+    );
+
+    const filename = `invoice-${order.order_no || order.id}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=\"${filename}\"`);
+
+    const doc = new PDFDocument({ size: "A4", margin: 40 });
+    doc.pipe(res);
+
+    doc.fontSize(22).text("Desi Delights - Invoice", { align: "left" });
+    doc.moveDown(0.5);
+    doc.fontSize(11).text(`Invoice No: ${order.order_no || order.id}`);
+    doc.text(`Date: ${new Date(order.created_at).toLocaleDateString()}`);
+    doc.text(`Status: ${order.status}`);
+    doc.text(`Payment Method: ${order.paymentMethod || "N/A"}`);
+    doc.moveDown(1);
+
+    doc.fontSize(12).text("Items", { underline: true });
+    doc.moveDown(0.5);
+
+    let y = doc.y;
+    items.forEach((item, index) => {
+      const lineTotal = Number(item.qty) * Number(item.price);
+      doc.fontSize(10).text(`${index + 1}. ${item.name}`, 40, y);
+      doc.text(`Qty: ${item.qty}`, 300, y);
+      doc.text(`Price: INR ${Number(item.price).toFixed(2)}`, 370, y);
+      doc.text(`Total: INR ${lineTotal.toFixed(2)}`, 470, y, { align: "right" });
+      y += 20;
+      if (y > 730) {
+        doc.addPage();
+        y = 60;
+      }
+    });
+
+    doc.moveDown(2);
+    doc.fontSize(12).text(`Grand Total: INR ${Number(order.totalPrice).toFixed(2)}`, {
+      align: "right",
+    });
+    doc.moveDown(1);
+    doc.fontSize(9).fillColor("gray").text("Thank you for shopping with Desi Delights.", {
+      align: "center",
+    });
+
+    doc.end();
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

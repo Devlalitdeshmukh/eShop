@@ -100,7 +100,7 @@ const Login = () => {
         </div>
         
         <div className="mt-6 text-center text-sm text-gray-500">
-          <p>For demo purposes, enter any email. Password is not required.</p>
+          <p>Use a valid account created in your backend database.</p>
         </div>
       </div>
     </div>
